@@ -1,0 +1,110 @@
+<html>
+	<head>
+		<script src="resources/JS/jquery.js"></script>
+		<style>
+			* { overflow: hidden; margin: 0; width: 100%; height: 100%; }
+			.c { background: black; }
+		</style>
+	</head>
+	<body>
+		<canvas class='c'>psychedelic rainbow spiral</canvas>
+		<iframe src="http://www.rainymood.com/" style="display:none;"></iframe>
+	</body>
+	<script>
+		var c = document.querySelector('.c') /* the canvas element */, 
+		ctx = c.getContext('2d') /* canvas context */, 
+		w /* canvas height */, 
+		h /* canvas height */, 
+		t = 0, 
+		max = Math.max, 
+		pow = Math.pow, 
+		sqrt = Math.sqrt, 
+		PI = Math.PI, 
+		sin = Math.sin, 
+		cos = Math.cos /* just me being lazy */,
+		/* spiral vars */
+		/* https://twitter.com/jackrugile/status/420459385505079296 */
+		n = 8 /* shades */, 
+		m = 4 /* shade repetitions */, 
+		p = 32 /* dots on each branch */, 
+		r,
+		beta /* dot branch data */, 
+		gamma /* dot data */, 
+		x0, y0, x1, y1, 
+		hue,  
+		t_step = 1/60, 
+		requestID;
+
+		//functions
+		var trimUnit = function(input_str, unit) {
+			return parseInt(input_str.split(unit)[0], 10);
+		};
+		
+		var spiral = function() {  
+			ctx.clearRect(0, 0, w, h);//clears canvas for new drawing
+			
+			for(var i = 0; i < n*m; i++) {//create the branches...
+				beta = i*2*PI/(n*m);//branch*2*3.14/total branches - where to put branch
+				x0 = 0;
+
+				/* Begin the path up here */
+				ctx.beginPath();
+				hue = i*360/n;//out of rainbox shades pick n dominate, set to 8 most common as default
+				ctx.translate(w/2, h/2);//draws new dots in middle
+				ctx.rotate(t/3);//rotation around original position
+				
+				/* only need to set the fillstyle once up here now */
+				ctx.fillStyle = 'hsl(' + hue + ', 100%, 65%)';//sets hue using the amount of shades to choose form, n most common
+				for(var j = 0; j < p; j++) {//make the dots for the branches
+					gamma = j*2*PI/p;//dot#*2*3.14/32 where to put the dot
+					r = max(1, pow(2*(j*(p - j)), .43) - 10);//radius of the circle being made - based off its position in the branch
+					
+					x0 += 3.4*r;
+					y0 = x0*sin(gamma + 2*t + x0/99)/5;
+					
+					/* change of coordinates */
+					x1 = x0*cos(beta) - y0*sin(beta);//create the path based up sin and cos curve - if take away after the function it rotates but dosent sway
+					y1 = x0*sin(beta) + y0*cos(beta);//create the path based off sin and cos curve - if take away after the function it rotates but dosent sway
+  
+					/* move it to the position of the arc */ 
+					/* (remove this for a cool effect) */
+					ctx.moveTo(x1,y1);//removes the sin curve fill
+					/* setup the arc path here */
+					ctx.arc(x1, y1, r, 0, 2*PI);//creates entire circle
+				}
+
+				/* close the 1 path that now is a combination of all the arcs */
+				ctx.closePath();
+				/* fill the whole path only once now */
+				ctx.fill();//draws the circle into its path
+				//this rotates all of the dot into their branch so next one can be made
+				ctx.rotate(-t/3);//controls spin spas
+				ctx.translate(-w/2, -h/2); //draws the branch in
+			}
+			
+			t += t_step;//moves the branches
+			requestID = requestAnimationFrame(spiral)//sets the id for when its resized
+		};
+
+		var initCanvas = function() {
+			var s /* canvas style set via CSS */ ;
+  
+			setTimeout(function() {
+				s = getComputedStyle(c);//gets window size data
+				w = c.width = trimUnit(s.width, 'px');//sets the width for animation
+				h = c.height = trimUnit(s.height, 'px');//sets the height for animation
+    
+				if(requestID) {//if current canvas is running  cancel current animation
+					cancelAnimationFrame(requestID);
+				}
+				spiral();//create the spiral effect
+			}, 0);
+		};
+
+		/* STEPS */
+		initCanvas();
+
+		/* fix looks on resize */
+		addEventListener('resize', initCanvas, false);
+	</script>
+</html>
